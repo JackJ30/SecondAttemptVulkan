@@ -2,10 +2,11 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <cstring>
-#include <vector>
-#include <iostream>
 #include <stdexcept>
+#include <iostream>
+#include <vector>
+#include <optional>
+#include <cstring>
 #include <cstdlib>
 
 const uint32_t WIDTH = 800;
@@ -175,10 +176,46 @@ private:
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-        // all devices are okay for right now
-        
-        return true;
+        // all devices that support graphics are okay for now
+        QueueFamilyIndices indices = findQueueFamilies(device);
+        return indices.isComplete();
     }
+
+    struct QueueFamilyIndices {
+        bool isComplete() {
+            return graphicsFamily.has_value();
+        }
+        
+        std::optional<uint32_t> graphicsFamily;
+    };
+
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+        QueueFamilyIndices indices;
+
+        // get list of queue families
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        // find one that supports graphics
+        int i = 0;
+        for (const auto& queueFamily : queueFamilies) {
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = i;
+            }
+
+            // break out if we found everything we need
+            if (indices.isComplete()) {
+                break;
+            }
+            
+            ++i;
+        }
+        
+        return indices;
+    }
+
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
         // set message settings
