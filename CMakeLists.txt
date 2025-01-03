@@ -9,7 +9,7 @@ find_package(Vulkan REQUIRED)
 find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 
 # program
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/stbImp.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES} glfw glm::glm)
 
@@ -40,3 +40,15 @@ foreach(source IN LISTS SHADERS_SOURCE)
 endforeach()
 
 add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS} make-shader-dir)
+
+# images
+set(SRC_IMAGES_DIR "${CMAKE_SOURCE_DIR}/images")
+set(BUILD_IMAGES_DIR "${CMAKE_BINARY_DIR}/images")
+
+add_custom_target(copy_images ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${SRC_IMAGES_DIR}
+    ${BUILD_IMAGES_DIR}
+)
+
+add_dependencies(${PROJECT_NAME} copy_images)
